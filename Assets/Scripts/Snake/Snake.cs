@@ -10,6 +10,7 @@ public class Snake : MonoBehaviour
     [SerializeField] private float _speed = 5f;
     [SerializeField] private float _tailSpringiness;
     [SerializeField] private SnakeHead _head;
+    [SerializeField] private int _tailSize; 
 
     private SnakeInput _input; 
     private List<Segment> _tail;
@@ -22,8 +23,24 @@ public class Snake : MonoBehaviour
         _tailGenerator = GetComponent<TailGenerator>();
         _input = GetComponent<SnakeInput>();
 
-        _tail = _tailGenerator.Generate();
-        SizeUpdated?.Invoke(_tail.Count); 
+        _tail = _tailGenerator.Generate(_tailSize);
+    }
+
+    private void Start()
+    {
+        SizeUpdated?.Invoke(_tail.Count);
+    }
+
+    private void OnEnable()
+    {
+        _head.BlockCollided += OnBlockCollided;
+        _head.BonusCollected += OnBonusCollected;
+    }
+
+    private void OnDisable()
+    {
+        _head.BlockCollided -= OnBlockCollided;
+        _head.BonusCollected -= OnBonusCollected;
     }
 
     private void FixedUpdate()
@@ -46,5 +63,19 @@ public class Snake : MonoBehaviour
         }
 
         _head.Move(nextPosition); 
+    }
+
+    private void OnBlockCollided()
+    {
+        Segment deletedSegment = _tail[_tail.Count - 1];
+        _tail.Remove(deletedSegment);
+        Destroy(deletedSegment.gameObject); 
+        SizeUpdated?.Invoke(_tail.Count); 
+    }
+
+    private void OnBonusCollected( int bonusSize)
+    {
+        _tail.AddRange(_tailGenerator.Generate(bonusSize));
+        SizeUpdated?.Invoke(_tail.Count); 
     }
 }
